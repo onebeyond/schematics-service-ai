@@ -1,30 +1,30 @@
 import {
-    apply, applyTemplates,
+    apply,
     MergeStrategy,
     mergeWith, move,
     type Rule,
-    type SchematicContext,
+    type SchematicContext, template,
     type Tree,
     url,
 } from '@angular-devkit/schematics';
-import {resolve} from 'path';
 import {normalize, strings} from "@angular-devkit/core";
 import {ServiceAIOptions} from "./schema";
 import * as path from "path";
 
 export function schematicsServiceAi(options: ServiceAIOptions): Rule {
+    const destinationFolder = path.join(options.destinationPath, options.serviceName);
     return (_tree: Tree, context: SchematicContext) => {
         context.logger.info('Creating service-ai from schematics. Settings: ' + JSON.stringify(options));
 
         const templateSource = apply(
-            url(resolve(__dirname, 'files')),
+            url(normalize('files')),
             [
-                applyTemplates({
+                template({
                     underscore: strings.underscore,
                     ...options
                 }),
-                move(path.join(options.destinationPath, options.serviceName)),
-                renameFile(options)
+                move(destinationFolder),
+                renameFile(destinationFolder)
             ],
         )
 
@@ -32,15 +32,15 @@ export function schematicsServiceAi(options: ServiceAIOptions): Rule {
     };
 }
 
-function renameFile(options: ServiceAIOptions): Rule {
+function renameFile(folder: string): Rule {
     return (tree: Tree) => {
-        tree.getDir(options.destinationPath).subfiles.forEach((file) => {
-                const fileName = file.split(path.sep).pop();
-                if(fileName?.startsWith('_')) {
-                    tree.rename(
-                        normalize(`${options.destinationPath}/${fileName}`),
-                        normalize(`${options.destinationPath}/${fileName.replace('_', '.')}`),
-                    );
+        tree.getDir(folder).subfiles.forEach((file) => {
+            const fileName = file.split(path.sep).pop();
+            if (fileName?.startsWith('_')) {
+                tree.rename(
+                    normalize(`${folder}/${fileName}`),
+                    normalize(`${folder}/${fileName.replace('_', '.')}`),
+                );
             }
         });
         return tree;
