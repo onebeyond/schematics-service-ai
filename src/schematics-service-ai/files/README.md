@@ -1,10 +1,6 @@
-## ob-service-ai
+## <%= serviceName %>
 
 ### 1. Description
-
-This service is intended to be used as a template to cover 80% of the projects that requires some kind of AI support. 
-
-It has been implemented using Typescript and NestJS in order to be as much as standard as possible.
 
 With this service you can upload some files as data and get answers from the AI model based on that data.
 

@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && jasmine src/**/*_spec.js",
-    "run:local": "npm run build && npx @angular-devkit/schematics-cli .:service-ai --dry-run=false",
+    "generate": "npm run build && npx @angular-devkit/schematics-cli .:service-ai --dry-run=false",
     "prepare": "husky"
   },
   "keywords": [
