@@ -1,0 +1,26 @@
+{
+  "name": "schematics-service-ai",
+  "version": "0.0.0",
+  "description": "A blank schematics",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && jasmine src/**/*_spec.js",
+    "run:local": "npm run build && npx @angular-devkit/schematics-cli .:service-ai --dry-run=false"
+  },
+  "keywords": [
+    "schematics"
+  ],
+  "author": "",
+  "license": "MIT",
+  "schematics": "./src/collection.json",
+  "dependencies": {
+    "@angular-devkit/core": "^17.1.1",
+    "@angular-devkit/schematics": "^17.1.1",
+    "typescript": "~5.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.0",
+    "@types/jasmine": "~5.1.0",
+    "jasmine": "^5.0.0"
+  }
+}

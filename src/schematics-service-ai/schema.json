@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "id-schematics-service-ai",
+  "title": "Creates a service integrated with AI passing some params",
+  "type": "object",
+  "properties": {
+    "serviceName": {
+      "type": "string",
+      "description": "Name of the service",
+      "x-prompt": "Enter a name for the service:"
+    },
+    "destinationPath": {
+      "type": "string",
+      "description": "Folder where the service will be created",
+      "x-prompt": "Enter a destination path (default: ./dist):",
+      "default": "./dist"
+    }
+  },
+  "required": ["serviceName"]
+}

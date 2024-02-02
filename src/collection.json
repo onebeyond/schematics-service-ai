@@ -1,0 +1,13 @@
+{
+  "$schema": "../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "schematics-service-ai": {
+      "description": "A blank schematic.",
+      "factory": "./schematics-service-ai/index#schematicsServiceAi",
+      "schema": "./schematics-service-ai/schema.json",
+      "aliases": [
+        "service-ai"
+      ]
+    }
+  }
+}
