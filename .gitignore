@@ -131,3 +131,11 @@ dist
 
 ## IDE
 .idea
+
+## Typescript generated files
+**/src/**/*.map
+**/src/**/*.js
+**/src/**/*.d.ts
+!**/src/*/files/*.map
+!**/src/*/files/*.js
+!**/src/*/files/*.d.ts
