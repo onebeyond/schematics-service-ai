@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && jasmine src/**/*_spec.js",
-    "run:local": "npm run build && npx @angular-devkit/schematics-cli .:service-ai --dry-run=false"
+    "run:local": "npm run build && npx @angular-devkit/schematics-cli .:service-ai --dry-run=false",
+    "prepare": "husky"
   },
   "keywords": [
     "schematics"
@@ -19,8 +20,9 @@
     "typescript": "~5.3.2"
   },
   "devDependencies": {
-    "@types/node": "^18.18.0",
     "@types/jasmine": "~5.1.0",
+    "@types/node": "^18.18.0",
+    "husky": "^9.0.10",
     "jasmine": "^5.0.0"
   }
 }
