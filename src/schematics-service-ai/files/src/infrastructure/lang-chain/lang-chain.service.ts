@@ -94,4 +94,10 @@ export class LangChainService {
       query: prompt,
     });
   }
+
+  async useAgnosticPrompt(prompt: string): Promise<string> {
+    return this.openAIChat.invoke({
+      query: prompt,
+    });
+  }
 }

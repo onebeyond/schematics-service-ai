@@ -83,4 +83,15 @@ export class ContentController {
       promptParams.template,
     );
   }
+
+  @Post('agnostic-prompt')
+  @ApiOperation({
+    summary:
+        'Uses a prompt to generate agnostic content from the search engine.',
+  })
+  async useAgnosticPrompt(@Body() promptParams: PromptParamsDto) {
+    return await this.contentService.useAgnosticPrompt(
+        promptParams.prompt,
+    );
+  }
 }

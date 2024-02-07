@@ -59,4 +59,8 @@ export class ContentService implements OnModuleInit {
   async usePrompt(prompt: string, template?: string) {
     return this.langChainService.usePrompt(prompt, template);
   }
+
+  async useAgnosticPrompt(prompt: string) {
+    return this.langChainService.useAgnosticPrompt(prompt);
+  }
 }
