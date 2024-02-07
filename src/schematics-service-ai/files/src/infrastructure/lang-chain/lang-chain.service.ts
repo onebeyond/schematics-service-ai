@@ -96,8 +96,7 @@ export class LangChainService {
   }
 
   async useAgnosticPrompt(prompt: string): Promise<string> {
-    return this.openAIChat.invoke({
-      query: prompt,
-    });
+    const response = await this.openAIChat.invoke(prompt);
+    return response.content as string;
   }
 }
