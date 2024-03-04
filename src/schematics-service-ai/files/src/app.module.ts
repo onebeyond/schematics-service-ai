@@ -8,6 +8,8 @@ import { ContentService } from './domain/services/content/content.service';
 import { ElasticSearchService } from './infrastructure/elastic-search/elastic-search.service';
 import { FileSystemService } from './infrastructure/file-system/file-system.service';
 import { LangChainService } from './infrastructure/lang-chain/lang-chain.service';
+import { MongoDbRepo } from './infrastructure/repository/mongodb';
+import { NotionRepo } from './infrastructure/repository/notion';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { LangChainService } from './infrastructure/lang-chain/lang-chain.service
     FileSystemService,
     ElasticSearchService,
     LangChainService,
+    MongoDbRepo,
+    NotionRepo,
   ],
 })
 export class AppModule {}

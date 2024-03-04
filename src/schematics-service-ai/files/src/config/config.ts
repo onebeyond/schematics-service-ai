@@ -68,7 +68,17 @@ export class ConfigValues {
   };
   public readonly elasticsearch: {
     url: string;
+    index?: string;
   };
+  public readonly mongodb: {
+    url: string;
+    dbName?: string;
+    collectionName?: string;
+  };
+  public readonly notion: {
+    notionIntegrationToken: string,
+    pageIds?: string[],
+  }
 }
 
 export const configValues = (): ConfigValues => ({
@@ -94,4 +104,10 @@ export const configValues = (): ConfigValues => ({
   port: Number(process.env.PORT),
   environment: process.env.NODE_ENV,
   loggingLevel: process.env.LOGGING_LEVEL,
+  mongodb: {
+    url: process.env.MONGO_URL,
+  },
+  notion: {
+    notionIntegrationToken: process.env.NOTION_INTEGRATION_TOKEN,
+  }
 });
