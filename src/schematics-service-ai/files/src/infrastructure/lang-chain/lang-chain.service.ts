@@ -21,6 +21,9 @@ export class LangChainService {
   private readonly azureOpenAIApiEmbeddingsDeploymentName: string;
   private fileLoaders = new FileLoaders();
 
+  private readonly splice = (l: any[], c: number) =>
+    l.length < c ? [l] : [l.splice(0, c), ...this.splice(l, c)];
+
   constructor(
     private readonly configService: ConfigService,
     private readonly elasticSearchService: ElasticSearchService,
@@ -70,8 +73,16 @@ export class LangChainService {
   }
 
   async indexDocuments(docs: Document[]) {
-    await this.vectorStore.addDocuments(docs);
-    this.logger.log(`indexed ${docs.length} documents`);
+    const numberOfDocs = docs.length;
+    const spliceSize = docs.length / 10;
+    const docSlices = this.splice(docs, spliceSize);
+    for (let i = 0; i < docSlices.length; i++) {
+      this.logger.debug(`Adding document slice ${i + 1} to vector store`);
+      await this.vectorStore.addDocuments(docSlices[i]);
+    }
+    this.logger.log(`Indexed ${numberOfDocs} documents`);
+
+    return numberOfDocs;
   }
 
   async deleteDocumentsByInternalId(internalId: string) {

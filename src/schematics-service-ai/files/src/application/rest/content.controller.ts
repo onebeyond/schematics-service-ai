@@ -72,6 +72,14 @@ export class ContentController {
     await this.contentService.deleteContentById(id);
   }
 
+  @Post('embeddings')
+  @ApiOperation({
+    summary: 'Generates vector embeddings from the search engine.',
+  })
+  async generateEmbeddings() {
+    return await this.contentService.addDocuments();
+  }
+
   @Post('prompt')
   @ApiOperation({
     summary:

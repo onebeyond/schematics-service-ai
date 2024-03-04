@@ -4,6 +4,8 @@ import { ElasticSearchService } from '../../../infrastructure/elastic-search/ela
 import { v4 as uuid } from 'uuid';
 import { ContentFile } from '../../models/ContentFile';
 import { LangChainService } from '../../../infrastructure/lang-chain/lang-chain.service';
+import { MongoDbRepo } from 'src/infrastructure/repository/mongodb';
+import { NotionRepo } from 'src/infrastructure/repository/notion';
 
 @Injectable()
 export class ContentService implements OnModuleInit {
@@ -14,6 +16,8 @@ export class ContentService implements OnModuleInit {
     private readonly fileSystemService: FileSystemService,
     private readonly elasticSearchService: ElasticSearchService,
     private readonly langChainService: LangChainService,
+    private readonly mongoDbRepo: MongoDbRepo,
+    private readonly notionRepo: NotionRepo,
   ) {}
 
   async onModuleInit() {
@@ -49,6 +53,11 @@ export class ContentService implements OnModuleInit {
         await this.langChainService.generateDocumentsFromFile(contentFile);
       await this.langChainService.indexDocuments(documents);
     }
+  }
+
+  async addDocuments(): Promise<void> {
+    const documents = await this.notionRepo.getDocuments();
+    await this.langChainService.indexDocuments(documents);
   }
 
   async deleteContentById(id: string) {
