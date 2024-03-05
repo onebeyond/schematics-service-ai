@@ -1,11 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Document } from '@langchain/core/documents';
+import { v4 as uuid } from 'uuid';
 import { FileSystemService } from '../../../infrastructure/file-system/file-system.service';
 import { ElasticSearchService } from '../../../infrastructure/elastic-search/elastic-search.service';
-import { v4 as uuid } from 'uuid';
 import { ContentFile } from '../../models/ContentFile';
 import { LangChainService } from '../../../infrastructure/lang-chain/lang-chain.service';
-import { MongoDbRepo } from 'src/infrastructure/repository/mongodb';
-import { NotionRepo } from 'src/infrastructure/repository/notion';
+import { MongoDbRepo } from '../../../infrastructure/repository/mongodb';
+import { NotionRepo } from '../../../infrastructure/repository/notion';
 
 @Injectable()
 export class ContentService implements OnModuleInit {
