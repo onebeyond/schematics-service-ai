@@ -30,7 +30,7 @@ export class NotionRepo implements DocumentRepo {
     }
 
     const documentLoader: Promise<Document[]>[] = this.notionPageIds.flatMap(loadAndSplit);
-    const documents: Document[] = await Promise.all(documentLoader);
+    const documents: Document[] = (await Promise.all(documentLoader)).flat();
     return documents;
   }
 }
