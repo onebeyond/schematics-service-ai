@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ElasticVectorSearch } from '@langchain/community/vectorstores/elasticsearch';
-import { ElasticSearchService } from '../elastic-search/elastic-search.service';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { Document } from '@langchain/core/documents';
-import { ContentFile } from '../../domain/models/ContentFile';
 import { RetrievalQAChain } from 'langchain/chains';
-import { PromptTemplate } from 'langchain/prompts';
+import { PromptTemplate } from '@langchain/core/prompts';
+
+import { ElasticSearchService } from '../elastic-search/elastic-search.service';
+import { ContentFile } from '../../domain/models/ContentFile';
 import { FileLoaders } from './lib/file-loaders';
 
 @Injectable()

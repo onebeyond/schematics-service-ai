@@ -5,6 +5,7 @@ import { NotionAPILoader } from 'langchain/document_loaders/web/notionapi';
 
 import { DocumentRepo } from "../../../domain/models/infra/document.repo";
 
+@Injectable()
 export class NotionRepo implements DocumentRepo {
   private readonly logger = new Logger(NotionRepo.name);
   private notionPageIds: string[];
