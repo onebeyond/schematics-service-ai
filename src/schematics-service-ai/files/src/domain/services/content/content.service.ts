@@ -55,9 +55,15 @@ export class ContentService implements OnModuleInit {
     }
   }
 
-  async addDocuments(): Promise<void> {
-    const documents = await this.notionRepo.getDocuments();
+  async addNotionDocuments(): Promise<void> {
+    const documents: Document[] = await this.notionRepo.getDocuments();
     await this.langChainService.indexDocuments(documents);
+  }
+
+  async addMongoDBDocuments(): Promise<void> {
+    const documents: Document[] = await this.mongoDbRepo.getDocuments();
+    await this.langChainService.indexDocuments(documents);
+    await this.mongoDbRepo.endConnection();
   }
 
   async deleteContentById(id: string) {

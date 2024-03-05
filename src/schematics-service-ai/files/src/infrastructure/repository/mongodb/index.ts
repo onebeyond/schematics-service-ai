@@ -31,4 +31,8 @@ export class MongoDbRepo implements DocumentRepo {
 
     return docs;
   }
+
+  async endConnection(): Promise<void> {
+    return this.client.close();
+  }
 }

@@ -72,12 +72,20 @@ export class ContentController {
     await this.contentService.deleteContentById(id);
   }
 
-  @Post('embeddings')
+  @Post('embeddings/notion')
   @ApiOperation({
-    summary: 'Generates vector embeddings from the search engine.',
+    summary: 'Generates vector embeddings for the search engine. Data picked from Notion',
   })
-  async generateEmbeddings() {
-    return await this.contentService.addDocuments();
+  async generateEmbeddingsFromNotion() {
+    return await this.contentService.addNotionDocuments();
+  }
+  
+  @Post('embeddings/mongodb')
+  @ApiOperation({
+    summary: 'Generates vector embeddings for the search engine. Data picked from Mongodb',
+  })
+  async generateEmbeddingsFromMongo() {
+    return await this.contentService.addMongoDBDocuments();
   }
 
   @Post('prompt')
