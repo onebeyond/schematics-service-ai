@@ -7,16 +7,12 @@ import { CSVLoader } from 'langchain/document_loaders/fs/csv';
 export class FileLoaders {
   private readonly logger = new Logger(FileLoaders.name);
 
-  private async generateDocumentsFromPdf(
-    contentFile: ContentFile,
-  ): Promise<Document[]> {
+  private async generateDocumentsFromPdf(contentFile: ContentFile): Promise<Document[]> {
     const loader = new PDFLoader(contentFile.filePath, {
       splitPages: true,
     });
     const docs = await loader.load();
-    this.logger.log(
-      `extracted ${docs.length} documents from ${contentFile.fileName}`,
-    );
+    this.logger.log(`extracted ${docs.length} documents from ${contentFile.fileName}`);
     return docs.map((doc) => ({
       ...doc,
       metadata: {
@@ -27,14 +23,10 @@ export class FileLoaders {
     }));
   }
 
-  async generateDocumentsFromCsv(
-    contentFile: ContentFile,
-  ): Promise<Document[]> {
+  async generateDocumentsFromCsv(contentFile: ContentFile): Promise<Document[]> {
     const loader = new CSVLoader(contentFile.filePath);
     const docs = await loader.load();
-    this.logger.log(
-      `extracted ${docs.length} documents from ${contentFile.fileName}`,
-    );
+    this.logger.log(`extracted ${docs.length} documents from ${contentFile.fileName}`);
     return docs.map((doc) => ({
       ...doc,
       metadata: {

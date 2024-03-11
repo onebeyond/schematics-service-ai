@@ -20,9 +20,7 @@ export class FileSystemService {
   async saveFile(file: Express.Multer.File): Promise<string> {
     try {
       await fs.writeFile(this.getStoragePath(file.originalname), file.buffer);
-      this.logger.log(
-        `file saved successfully into ${this.getStoragePath(file.originalname)}`,
-      );
+      this.logger.log(`file saved successfully into ${this.getStoragePath(file.originalname)}`);
       return this.getStoragePath(file.originalname);
     } catch (e) {
       this.logger.error('error saving file', e);

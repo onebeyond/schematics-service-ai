@@ -5,10 +5,11 @@ import { configValues } from './config/config';
 import { validate } from './config/validation';
 import { LoggerModule } from 'nestjs-pino';
 import { ContentService } from './domain/services/content/content.service';
+import { MongoDBService } from './infrastructure/mongodb/mongodb.service';
 import { ElasticSearchService } from './infrastructure/elastic-search/elastic-search.service';
 import { FileSystemService } from './infrastructure/file-system/file-system.service';
 import { LangChainService } from './infrastructure/lang-chain/lang-chain.service';
-
+import { NotionService } from './infrastructure/notion/notion.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -53,9 +54,11 @@ import { LangChainService } from './infrastructure/lang-chain/lang-chain.service
   controllers: [ContentController],
   providers: [
     ContentService,
+    MongoDBService,
     FileSystemService,
     ElasticSearchService,
     LangChainService,
+    NotionService,
   ],
 })
 export class AppModule {}

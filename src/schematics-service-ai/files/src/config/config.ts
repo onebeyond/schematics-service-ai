@@ -45,6 +45,9 @@ export class EnvVariables {
 
   @IsString()
   ELASTICSEARCH_URL: string;
+
+  @IsString()
+  NOTION_INTEGRATION_TOKEN: string;
 }
 
 export class ConfigValues {
@@ -68,6 +71,15 @@ export class ConfigValues {
   };
   public readonly elasticsearch: {
     url: string;
+    index: string;
+  };
+  public readonly notion: {
+    integrationToken: string;
+  };
+  public readonly mongodb: {
+    connectionString: string;
+    dbName: string;
+    collection: string;
   };
 }
 
@@ -82,16 +94,24 @@ export const configValues = (): ConfigValues => ({
       apiKey: process.env.AZURE_OPENAI_API_KEY,
       apiVersion: process.env.AZURE_OPENAI_API_VERSION,
       apiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
-      apiEmbeddingsDeploymentName:
-        process.env.AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME,
+      apiEmbeddingsDeploymentName: process.env.AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME,
       apiChatDeploymentName: process.env.AZURE_OPENAI_API_CHAT_DEPLOYMENT_NAME,
       apiChatTemperature: Number(process.env.AZURE_OPENAI_API_CHAT_TEMPERATURE),
     },
   },
   elasticsearch: {
     url: process.env.ELASTICSEARCH_URL,
+    index: 'elastic_index_name',
   },
   port: Number(process.env.PORT),
   environment: process.env.NODE_ENV,
   loggingLevel: process.env.LOGGING_LEVEL,
+  notion: {
+    integrationToken: process.env.NOTION_INTEGRATION_TOKEN,
+  },
+  mongodb: {
+    connectionString: process.env.MONGO_URL,
+    dbName: 'db_name',
+    collection: 'mongo_collection',
+  },
 });

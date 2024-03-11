@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@angular-devkit/schematics/collection-schema.json",
   "schematics": {
     "schematics-service-ai": {
-      "description": "A blank schematic.",
+      "description": "A schematic to generate a microservice with AI capabilities.",
       "factory": "./schematics-service-ai/index#schematicsServiceAi",
       "schema": "./schematics-service-ai/schema.json",
       "aliases": [

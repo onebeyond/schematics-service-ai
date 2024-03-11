@@ -4,9 +4,9 @@ import { ElasticVectorSearch } from '@langchain/community/vectorstores/elasticse
 import { ElasticSearchService } from '../elastic-search/elastic-search.service';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { Document } from '@langchain/core/documents';
+import { PromptTemplate } from '@langchain/core/prompts'
 import { ContentFile } from '../../domain/models/ContentFile';
 import { RetrievalQAChain } from 'langchain/chains';
-import { PromptTemplate } from 'langchain/prompts';
 import { FileLoaders } from './lib/file-loaders';
 
 @Injectable()
@@ -69,9 +69,20 @@ export class LangChainService {
     return this.fileLoaders.generateDocuments(contentFile);
   }
 
-  async indexDocuments(docs: Document[]) {
-    await this.vectorStore.addDocuments(docs);
+  generateDocumentsFromResultSet(data: any[]): Document[] {
+    return data.map(
+      (doc: any) =>
+        new Document({
+          pageContent: JSON.stringify(doc),
+        }),
+    );
+  }
+
+  async indexDocuments(docs: Document[]): Promise<string[]> {
+    const docIds: string[] = await this.vectorStore.addDocuments(docs);
     this.logger.log(`indexed ${docs.length} documents`);
+
+    return docIds;
   }
 
   async deleteDocumentsByInternalId(internalId: string) {
