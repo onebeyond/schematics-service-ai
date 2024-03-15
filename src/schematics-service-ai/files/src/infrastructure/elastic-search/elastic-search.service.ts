@@ -25,6 +25,26 @@ export class ElasticSearchService {
     }
   }
 
+  async similaritySearch(
+    indexName: string, text: string, // eslint-disable-line prettier/prettier
+  ): Promise<{ total?: number | object; results: any[] }> {
+    const { hits } = await this.client.search({
+      index: indexName,
+      query: {
+        match: {
+          text,
+        },
+      },
+    });
+
+    const results = hits.hits.map((hit) => ({
+      _source: hit._source,
+      score: hit._score,
+      _id: hit._id,
+    }));
+    return { total: hits.total?.valueOf(), results };
+  }
+
   async search<T>(indexName: string): Promise<T[]> {
     const { hits } = await this.client.search({
       index: indexName,

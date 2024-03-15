@@ -17,22 +17,27 @@ describe('ContentService', () => {
     generateDocumentsFromResultSet: jest
       .fn()
       .mockImplementation((data: any[]) => data.map((e) => new Document({ pageContent: e }))),
-    indexDocuments: jest
-      .fn()
-      .mockImplementation((docs: Document[]) => Promise.resolve(docs.length)),
+    indexDocuments: jest.fn().mockImplementation((docs: Document[]) => Promise.resolve(docs)),
   };
   const configServiceMock = {
-    get: jest
-      .fn()
-      .mockImplementation((key: string) =>
-        key === 'mongodb.dbName'
-          ? 'dbName'
-          : key === 'mongodb.collection'
-            ? 'collection'
-            : undefined,
-      ),
+    get: jest.fn().mockImplementation((key: string) => {
+      switch (key) {
+        case 'elasticsearch.index':
+          return 'index';
+        case 'mongodb.dbName':
+          return 'dbName';
+        case 'mongodb.collection':
+          return 'collection';
+        case 'notion.pageId':
+          return 'notionPageIdFromConfig';
+        default:
+          return undefined;
+      }
+    }),
   };
-  const notionServiceMock = {};
+  const notionServiceMock = {
+    loadPagesFromId: jest.fn().mockImplementation((pageId?: string) => Promise.resolve({ pageId })),
+  };
   const mongodbServiceMock = {
     connect: () => mongodbServiceMock,
     getAll: jest.fn().mockImplementation(({ dbName, collection }) => Promise.resolve(['elem'])), // eslint-disable-line
@@ -79,52 +84,81 @@ describe('ContentService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should call mongo service with right parameters picked from config', async () => {
-    let result: number;
-    let error: unknown;
-    const [dbName, collection] = [undefined, undefined];
+  describe('Optional parameters on embedding methods', () => {
+    it('should call mongo service with right parameters picked from config', async () => {
+      let result: number;
+      let error: unknown;
+      const [dbName, collection] = [undefined, undefined];
 
-    try {
-      result = await service.processNoSQLData(dbName, collection);
-    } catch (err: unknown) {
-      error = err;
-    } finally {
-      expect(error).toBeUndefined();
-      expect(result).toBe(1);
-      expect(configServiceMock.get).toHaveBeenNthCalledWith(2, 'mongodb.dbName');
-      expect(configServiceMock.get).toHaveBeenNthCalledWith(3, 'mongodb.collection');
-    }
-  });
+      try {
+        result = await service.processNoSQLData(dbName, collection);
+      } catch (err: unknown) {
+        error = err;
+      } finally {
+        expect(error).toBeUndefined();
+        expect(result).toBe(1);
+        expect(configServiceMock.get).toHaveBeenNthCalledWith(2, 'mongodb.dbName');
+        expect(configServiceMock.get).toHaveBeenNthCalledWith(3, 'mongodb.collection');
+      }
+    });
 
-  it('should call mongo service with parameters from controller', async () => {
-    const [dbName, collection] = ['dbName', 'coll'];
-    let result: number;
-    let error: unknown;
+    it('should call mongo service with parameters from controller', async () => {
+      const [dbName, collection] = ['dbName', 'coll'];
+      let result: number;
+      let error: unknown;
 
-    try {
-      result = await service.processNoSQLData(dbName, collection);
-    } catch (err: unknown) {
-      error = err;
-    } finally {
-      expect(error).toBeUndefined();
-      expect(result).toBe(1);
-      expect(configServiceMock.get).toHaveBeenCalledTimes(1);
-    }
-  });
+      try {
+        result = await service.processNoSQLData(dbName, collection);
+      } catch (err: unknown) {
+        error = err;
+      } finally {
+        expect(error).toBeUndefined();
+        expect(result).toBe(1);
+        expect(configServiceMock.get).toHaveBeenCalledTimes(1);
+      }
+    });
 
-  it('should call mongo service if only one parameter is collection', async () => {
-    const [dbName, collection] = [undefined, 'coll'];
-    let result: number;
-    let error: unknown;
+    it('should call mongo service if only one parameter is collection', async () => {
+      const [dbName, collection] = [undefined, 'coll'];
+      let result: number;
+      let error: unknown;
 
-    try {
-      result = await service.processNoSQLData(dbName, collection);
-    } catch (err: unknown) {
-      error = err;
-    } finally {
-      expect(error).toBeUndefined();
-      expect(result).toBe(1);
-      expect(configServiceMock.get).toHaveBeenNthCalledWith(2, 'mongodb.dbName');
-    }
+      try {
+        result = await service.processNoSQLData(dbName, collection);
+      } catch (err: unknown) {
+        error = err;
+      } finally {
+        expect(error).toBeUndefined();
+        expect(result).toBe(1);
+        expect(configServiceMock.get).toHaveBeenNthCalledWith(2, 'mongodb.dbName');
+      }
+    });
+
+    it('should call notion service with pageId from controller', async () => {
+      const pageId = 'pageId';
+      let error: unknown;
+
+      try {
+        await service.processNotionPages(pageId);
+      } catch (err: unknown) {
+        error = err;
+      } finally {
+        expect(error).toBeUndefined();
+        expect(notionServiceMock.loadPagesFromId).toHaveBeenCalledWith(pageId);
+      }
+    });
+
+    it('should call notion service with pageId from config', async () => {
+      let error: unknown;
+
+      try {
+        await service.processNotionPages();
+      } catch (err: unknown) {
+        error = err;
+      } finally {
+        expect(error).toBeUndefined();
+        expect(notionServiceMock.loadPagesFromId).toHaveBeenCalledWith('notionPageIdFromConfig');
+      }
+    });
   });
 });

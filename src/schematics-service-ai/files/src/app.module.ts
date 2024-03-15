@@ -52,13 +52,6 @@ import { NotionService } from './infrastructure/notion/notion.service';
     }),
   ],
   controllers: [ContentController],
-  providers: [
-    ContentService,
-    MongoDBService,
-    FileSystemService,
-    ElasticSearchService,
-    LangChainService,
-    NotionService,
-  ],
+  providers: [ContentService, MongoDBService, FileSystemService, ElasticSearchService, LangChainService, NotionService],
 })
 export class AppModule {}

@@ -25,7 +25,7 @@ export class NotionService {
     });
     // eslint-disable-next-line prettier/prettier
     const pageDocs: Document<Record<string, any>>[] = await this.notionAPILoader.loadAndSplit();
-
+    this.logger.debug(`Got ${pageDocs.length} Langchain documents on loading from Notion (id: ${pageId})`);
     return pageDocs;
   }
 }

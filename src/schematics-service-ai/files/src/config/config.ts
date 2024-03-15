@@ -75,12 +75,14 @@ export class ConfigValues {
   };
   public readonly notion: {
     integrationToken: string;
+    pageId?: string;
   };
   public readonly mongodb: {
     connectionString: string;
-    dbName: string;
-    collection: string;
+    dbName?: string;
+    collection?: string;
   };
+  public readonly promptTemplate?: string;
 }
 
 export const configValues = (): ConfigValues => ({
@@ -101,7 +103,7 @@ export const configValues = (): ConfigValues => ({
   },
   elasticsearch: {
     url: process.env.ELASTICSEARCH_URL,
-    index: 'elastic_index_name',
+    index: 'elastic_index',
   },
   port: Number(process.env.PORT),
   environment: process.env.NODE_ENV,

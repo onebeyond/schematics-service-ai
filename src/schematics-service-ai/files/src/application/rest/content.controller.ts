@@ -82,8 +82,7 @@ export class ContentController {
 
   @Post('embed-mongodb')
   @ApiOperation({
-    summary:
-      'Load remote data from mongodb collection. If not `collection` in params, will pick from configuration',
+    summary: 'Load remote data from mongodb collection. If not `collection` in params, will pick from configuration',
   })
   async loadAndProcessMongoDBData(@Body() mongoParams: MongoDBParamsDto) {
     const { dbName, collection } = mongoParams;
@@ -105,6 +104,16 @@ export class ContentController {
     summary: 'Uses a prompt to generate content retrieved from the search engine.', // eslint-disable-line
   })
   async usePrompt(@Body() promptParams: PromptParamsDto) {
-    return await this.contentService.usePrompt(promptParams.prompt, promptParams.template);
+    const { template, prompt } = promptParams;
+    return await this.contentService.usePrompt(prompt, template);
+  }
+
+  @Get('similarity-search')
+  @ApiOperation({
+    summary: 'Performs a semantic search based on query terms.',
+  })
+  async similaritySearch(@Query('term') term: string, @Query('count') count: number = 10): Promise<any> {
+    const { results } = await this.contentService.similaritySearch(term);
+    return results.slice(0, count).map((r) => ({ _id: r._id, text: r._source.text, score: r.score }));
   }
 }

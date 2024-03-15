@@ -28,6 +28,7 @@ export class MongoDBService {
   }
 
   async getAll({ dbName, collection }: { dbName: string; collection: string }): Promise<any[]> {
+    await this.connect();
     const db: Db = this.client.db(dbName);
 
     return db.collection(collection).find().toArray();

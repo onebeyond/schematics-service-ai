@@ -5,5 +5,5 @@ export class NotionParamsDto {
     description: 'The pageId/blockid of the (root) page we want to index.',
     example: '32 character length string (uuid): dee117e221d8447777b9669a41fa633a',
   })
-  pageId: string;
+  pageId?: string;
 }

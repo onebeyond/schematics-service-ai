@@ -35,6 +35,14 @@ export class ContentService implements OnModuleInit {
     return this.elasticSearchService.search<ContentFile>(this.contentIndex);
   }
 
+  async similaritySearch(term: string): Promise<any> {
+    const result: { total?: number | object; results: any[] } = await this.elasticSearchService.similaritySearch(
+      this.contentIndex,
+      term,
+    );
+    return result;
+  }
+
   async processFiles(files: Express.Multer.File[], description: string): Promise<void> {
     const contentFiles: ContentFile[] = await Promise.all(
       files.map(async (file) => {
@@ -50,8 +58,7 @@ export class ContentService implements OnModuleInit {
     );
     await this.elasticSearchService.indexDocuments<ContentFile>(this.contentIndex, contentFiles);
     for await (const contentFile of contentFiles) {
-      const documents: Document[] =
-        await this.langChainService.generateDocumentsFromFile(contentFile);
+      const documents: Document[] = await this.langChainService.generateDocumentsFromFile(contentFile);
       await this.langChainService.indexDocuments(documents);
     }
   }
@@ -61,8 +68,9 @@ export class ContentService implements OnModuleInit {
     await this.langChainService.deleteDocumentsByInternalId(id);
   }
 
-  async processNotionPages(pageId: string): Promise<void> {
-    const pageDocs: Document[] = await this.notionService.loadPagesFromId(pageId);
+  async processNotionPages(pageId?: string): Promise<void> {
+    const notionPageId = pageId ?? this.configService.get('notion.pageId');
+    const pageDocs: Document[] = await this.notionService.loadPagesFromId(notionPageId);
     // await this.elasticSearchService.indexDocuments<Document>(this.contentIndex, pageDocs);
     await this.langChainService.indexDocuments(pageDocs);
   }
@@ -76,17 +84,13 @@ export class ContentService implements OnModuleInit {
     this.logger.debug(`Documents retrieved ${data.length}`);
 
     const docs: Document[] = this.langChainService.generateDocumentsFromResultSet(data);
-    const batchesProcessedIds: string[] = await this.langChainService.indexDocuments(docs);
+    const docIdsProcessed = await this.langChainService.indexDocuments(docs);
     await this.mongodbService.endConnection();
 
-    return batchesProcessedIds.length;
+    return docIdsProcessed.length;
   }
 
   async usePrompt(prompt: string, template?: string) {
-    return this.langChainService.usePrompt(prompt, template);
-  }
-
-  async useAgnosticPrompt(prompt: string) {
-    return this.langChainService.useAgnosticPrompt(prompt);
+    return this.langChainService.usePrompt(prompt, template ?? this.configService.get('promptTemplate'));
   }
 }
