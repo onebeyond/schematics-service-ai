@@ -10,5 +10,5 @@ export class MongoDBParamsDto {
     description: 'The collection where the data is goingo to be got.',
     example: 'any valid mongodb collection name',
   })
-  collection?: string;
+  collections?: string;
 }

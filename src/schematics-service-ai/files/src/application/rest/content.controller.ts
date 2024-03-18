@@ -76,8 +76,8 @@ export class ContentController {
     summary: 'Import notion data (from page `pageId`) and children pages',
   })
   async loadAndStoreNotionDocs(@Body() notionParams: NotionParamsDto) {
-    const { pageId } = notionParams;
-    await this.contentService.processNotionPages(pageId);
+    const { pageIds } = notionParams;
+    await this.contentService.processNotionPages(pageIds);
   }
 
   @Post('embed-mongodb')
@@ -85,8 +85,8 @@ export class ContentController {
     summary: 'Load remote data from mongodb collection. If not `collection` in params, will pick from configuration',
   })
   async loadAndProcessMongoDBData(@Body() mongoParams: MongoDBParamsDto) {
-    const { dbName, collection } = mongoParams;
-    const result: number = await this.contentService.processNoSQLData(dbName, collection);
+    const { dbName, collections } = mongoParams;
+    const result: number = await this.contentService.processNoSQLData(dbName, collections);
 
     return { processed: result };
   }

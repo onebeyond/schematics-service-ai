@@ -26,17 +26,17 @@ describe('ContentService', () => {
           return 'index';
         case 'mongodb.dbName':
           return 'dbName';
-        case 'mongodb.collection':
+        case 'mongodb.collections':
           return 'collection';
-        case 'notion.pageId':
-          return 'notionPageIdFromConfig';
+        case 'notion.pageIds':
+          return ['notionPageIdFromConfig', 'notionPageIdFromConfig2'];
         default:
           return undefined;
       }
     }),
   };
   const notionServiceMock = {
-    loadPagesFromId: jest.fn().mockImplementation((pageId?: string) => Promise.resolve({ pageId })),
+    loadPagesFromId: jest.fn().mockImplementation((pageId?: string) => Promise.resolve({ pageContent: pageId })),
   };
   const mongodbServiceMock = {
     connect: () => mongodbServiceMock,
@@ -98,23 +98,25 @@ describe('ContentService', () => {
         expect(error).toBeUndefined();
         expect(result).toBe(1);
         expect(configServiceMock.get).toHaveBeenNthCalledWith(2, 'mongodb.dbName');
-        expect(configServiceMock.get).toHaveBeenNthCalledWith(3, 'mongodb.collection');
+        expect(configServiceMock.get).toHaveBeenNthCalledWith(3, 'mongodb.collections');
+        expect(mongodbServiceMock.getAll).toHaveBeenCalledWith({ dbName: 'dbName', collection: 'collection' });
       }
     });
 
     it('should call mongo service with parameters from controller', async () => {
-      const [dbName, collection] = ['dbName', 'coll'];
+      const [dbName, collections] = ['dbName', 'coll'];
       let result: number;
       let error: unknown;
 
       try {
-        result = await service.processNoSQLData(dbName, collection);
+        result = await service.processNoSQLData(dbName, collections);
       } catch (err: unknown) {
         error = err;
       } finally {
         expect(error).toBeUndefined();
         expect(result).toBe(1);
         expect(configServiceMock.get).toHaveBeenCalledTimes(1);
+        expect(mongodbServiceMock.getAll).toHaveBeenCalledWith({ dbName, collection: collections });
       }
     });
 
@@ -134,6 +136,26 @@ describe('ContentService', () => {
       }
     });
 
+    it('should call mongo service with multiple collections to index', async () => {
+      const [dbName, collections] = ['dbName', 'coll1,coll2,coll3'];
+      let result: number;
+      let error: unknown;
+
+      try {
+        result = await service.processNoSQLData(dbName, collections);
+      } catch (err: unknown) {
+        error = err;
+      } finally {
+        expect(error).toBeUndefined();
+        expect(result).toBe(3);
+        expect(configServiceMock.get).toHaveBeenCalledTimes(1);
+        expect(mongodbServiceMock.getAll).toHaveBeenNthCalledWith(1, { dbName, collection: 'coll1' });
+        expect(mongodbServiceMock.getAll).toHaveBeenNthCalledWith(2, { dbName, collection: 'coll2' });
+        expect(mongodbServiceMock.getAll).toHaveBeenNthCalledWith(3, { dbName, collection: 'coll3' });
+        expect(langChainServiceMock.indexDocuments).toHaveBeenCalledTimes(3);
+      }
+    });
+
     it('should call notion service with pageId from controller', async () => {
       const pageId = 'pageId';
       let error: unknown;
@@ -148,6 +170,21 @@ describe('ContentService', () => {
       }
     });
 
+    it('should call notion service with multiple pageIds from controller', async () => {
+      const pageIds = 'pageId1,pageId2';
+      let error: unknown;
+
+      try {
+        await service.processNotionPages(pageIds);
+      } catch (err: unknown) {
+        error = err;
+      } finally {
+        expect(error).toBeUndefined();
+        expect(notionServiceMock.loadPagesFromId).toHaveBeenNthCalledWith(1, 'pageId1');
+        expect(notionServiceMock.loadPagesFromId).toHaveBeenNthCalledWith(2, 'pageId2');
+      }
+    });
+
     it('should call notion service with pageId from config', async () => {
       let error: unknown;
 
@@ -157,7 +194,8 @@ describe('ContentService', () => {
         error = err;
       } finally {
         expect(error).toBeUndefined();
-        expect(notionServiceMock.loadPagesFromId).toHaveBeenCalledWith('notionPageIdFromConfig');
+        expect(notionServiceMock.loadPagesFromId).toHaveBeenNthCalledWith(1, 'notionPageIdFromConfig');
+        expect(notionServiceMock.loadPagesFromId).toHaveBeenNthCalledWith(2, 'notionPageIdFromConfig2');
       }
     });
   });

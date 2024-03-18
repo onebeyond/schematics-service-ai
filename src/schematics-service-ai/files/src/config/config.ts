@@ -75,12 +75,12 @@ export class ConfigValues {
   };
   public readonly notion: {
     integrationToken: string;
-    pageId?: string;
+    pageIds?: string;
   };
   public readonly mongodb: {
     connectionString: string;
     dbName?: string;
-    collection?: string;
+    collections?: string;
   };
   public readonly promptTemplate?: string;
 }
@@ -114,6 +114,6 @@ export const configValues = (): ConfigValues => ({
   mongodb: {
     connectionString: process.env.MONGO_URL,
     dbName: 'db_name',
-    collection: 'mongo_collection',
+    collections: 'mongo_collection',
   },
 });

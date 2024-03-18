@@ -28,11 +28,11 @@ describe('ContentController', () => {
 
   describe('Notion embeddings endpoints', () => {
     it('should call processNotionPages method with the correct pageId', async () => {
-      const notionParams = { pageId: 'examplePageId' };
+      const notionParams = { pageIds: 'examplePageId,examplePageId2' };
 
       await controller.loadAndStoreNotionDocs(notionParams);
 
-      expect(contentService.processNotionPages).toHaveBeenCalledWith(notionParams.pageId);
+      expect(contentService.processNotionPages).toHaveBeenCalledWith(notionParams.pageIds);
     });
 
     it('should call processNotionPages method with undefined pageId', async () => {
@@ -44,11 +44,11 @@ describe('ContentController', () => {
 
   describe('MongoDB embeddings endpoints', () => {
     it('should call loadAndProcessNoSQLData method with the correct params', async () => {
-      const params = { dbName: 'exampleDb', collection: 'exampleCollection' };
+      const params = { dbName: 'exampleDb', collections: 'exampleCollection' };
 
       await controller.loadAndProcessMongoDBData(params);
 
-      expect(contentService.processNoSQLData).toHaveBeenCalledWith(params.dbName, params.collection);
+      expect(contentService.processNoSQLData).toHaveBeenCalledWith(params.dbName, params.collections);
     });
 
     it('should be able to call the endpoint without parameters', async () => {

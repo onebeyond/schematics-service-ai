@@ -68,26 +68,37 @@ export class ContentService implements OnModuleInit {
     await this.langChainService.deleteDocumentsByInternalId(id);
   }
 
-  async processNotionPages(pageId?: string): Promise<void> {
-    const notionPageId = pageId ?? this.configService.get('notion.pageId');
-    const pageDocs: Document[] = await this.notionService.loadPagesFromId(notionPageId);
+  async processNotionPages(pageIds?: string): Promise<void> {
+    const notionPageIds: string = pageIds ?? this.configService.get<string[]>('notion.pageIds').join(',');
+    const listPageIds: string[] = notionPageIds.split(',');
+    const loadPagesTasks: Promise<Document[]>[] = listPageIds.map((pageId) =>
+      this.notionService.loadPagesFromId(pageId),
+    );
+    const loadedDocs: Document[] = (await Promise.all(loadPagesTasks)).flat();
     // await this.elasticSearchService.indexDocuments<Document>(this.contentIndex, pageDocs);
-    await this.langChainService.indexDocuments(pageDocs);
+    await this.langChainService.indexDocuments(loadedDocs);
   }
 
-  async processNoSQLData(dbName?: string, collection?: string): Promise<number> {
+  async processNoSQLData(dbName?: string, collections?: string): Promise<number> {
     const mongo: MongoDBService = await this.mongodbService.connect();
-    const data: any[] = await mongo.getAll({
-      dbName: dbName ?? this.configService.get('mongodb.dbName'),
-      collection: collection ?? this.configService.get('mongodb.collection'),
-    });
-    this.logger.debug(`Documents retrieved ${data.length}`);
+    const db: string = dbName ?? this.configService.get('mongodb.dbName');
+    const paramCollections: string = collections ?? this.configService.get('mongodb.collections');
+    const collectionsList: string[] = paramCollections.split(',');
+    let documentsIndexed = 0;
 
-    const docs: Document[] = this.langChainService.generateDocumentsFromResultSet(data);
-    const docIdsProcessed = await this.langChainService.indexDocuments(docs);
+    for await (const collection of collectionsList) {
+      const data: any[] = await mongo.getAll({
+        dbName: db,
+        collection,
+      });
+      this.logger.debug(`Documents retrieved ${data.length}`);
+      const docs: Document[] = this.langChainService.generateDocumentsFromResultSet(data);
+      const processedDocs: string[] = await this.langChainService.indexDocuments(docs);
+      documentsIndexed += processedDocs.length;
+    }
     await this.mongodbService.endConnection();
 
-    return docIdsProcessed.length;
+    return documentsIndexed;
   }
 
   async usePrompt(prompt: string, template?: string) {
