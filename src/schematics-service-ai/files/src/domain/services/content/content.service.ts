@@ -3,12 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { Document } from '@langchain/core/documents';
 import { v4 as uuid } from 'uuid';
 
-import { ContentFile } from '../../models/ContentFile';
+import { CloudContentFile, ContentFile } from '../../models/ContentFile';
 import { MongoDBService } from '../../../infrastructure/mongodb/mongodb.service';
 import { FileSystemService } from '../../../infrastructure/file-system/file-system.service';
 import { ElasticSearchService } from '../../../infrastructure/elastic-search/elastic-search.service';
 import { LangChainService } from '../../../infrastructure/lang-chain/lang-chain.service';
 import { NotionService } from '../../../infrastructure/notion/notion.service';
+import { AzureLoaderFileService, S3LoaderFileService } from '../../../infrastructure/cloud-storage';
+import { AzureBlobParamsDto, S3BlobParamsDto } from '../../../application/rest/dto';
+import { FileTypesLoadersService } from '../../../infrastructure/file-system/file-loaders.service';
 
 @Injectable()
 export class ContentService implements OnModuleInit {
@@ -22,6 +25,9 @@ export class ContentService implements OnModuleInit {
     private readonly elasticSearchService: ElasticSearchService,
     private readonly langChainService: LangChainService,
     private readonly configService: ConfigService,
+    private readonly azureLoaderService: AzureLoaderFileService,
+    private readonly s3LoaderService: S3LoaderFileService,
+    private readonly fileLoaders: FileTypesLoadersService,
   ) {
     this.contentIndex = this.configService.get<string>('elasticsearch.index');
   }
@@ -43,6 +49,7 @@ export class ContentService implements OnModuleInit {
     return result;
   }
 
+  //#region uploadFiles
   async processFiles(files: Express.Multer.File[], description: string): Promise<void> {
     const contentFiles: ContentFile[] = await Promise.all(
       files.map(async (file) => {
@@ -53,14 +60,63 @@ export class ContentService implements OnModuleInit {
           fileName: file.originalname,
           filePath,
           createdAt: new Date(),
-        };
+        } as ContentFile;
       }),
     );
+
     await this.elasticSearchService.indexDocuments<ContentFile>(this.contentIndex, contentFiles);
     for await (const contentFile of contentFiles) {
-      const documents: Document[] = await this.langChainService.generateDocumentsFromFile(contentFile);
+      // const documents: Document[] = await this.langChainService.generateDocumentsFromFile(contentFile);
+      const documents: Document[] = await this.fileLoaders.generateDocuments(contentFile);
       await this.langChainService.indexDocuments(documents);
     }
+  }
+
+  //#region Azure
+  async loadAzureBlobFile(blobParams: AzureBlobParamsDto): Promise<number | Error> {
+    const { container, prefix, blobName } = blobParams;
+    const containerName: string = container ?? this.configService.get<string>('storage.azure.container');
+    if (!containerName) return Error(`A container must be set either by query params or config`);
+
+    // const docs: Document[] = await this.azureLoaderService.getAll(containerName, prefix, blobName);
+    // needs ContentFile descriptors for file(s) in order to get file type and also the temp filePath!!
+    // then, with the descriptors, we can call langChainService.generateDocumentsFromFile(contentFile)
+    const blobNames: string[] = await this.azureLoaderService.getBlobNames(containerName, prefix, blobName);
+
+    const buildBlobDescriptors = blobNames.map(this.azureLoaderService.buildBlobDescriptor(containerName));
+    const blobDescriptors: CloudContentFile[] = await Promise.all(buildBlobDescriptors);
+
+    const buildDocs: Promise<Document[]>[] = blobDescriptors.map((d: CloudContentFile) =>
+      this.fileLoaders.generateDocuments(d),
+    );
+    const docs: Document[] = (await Promise.all(buildDocs)).flat();
+    const [docsAdded]: [number, number] = await this.langChainService.indexDocuments(docs);
+
+    return docsAdded;
+  }
+
+  //#region S3
+  async loadS3BlobFile(blobParams: S3BlobParamsDto): Promise<number | Error> {
+    const { bucket, prefix, blobName } = blobParams;
+    const bucketName: string = bucket ?? this.configService.get<string>('storage.s3.bucket');
+    if (!bucketName) return Error(`A bucket must be set either by body param 'bucket' or config`);
+
+    const blobNames: string[] = await this.s3LoaderService.getBlobNames(bucket, prefix, blobName);
+
+    const buildBlobDescriptors = blobNames.map(this.s3LoaderService.buildBlobDescriptor(bucket));
+    const blobDescriptors: CloudContentFile[] = await Promise.all(buildBlobDescriptors);
+
+    const buildDocs: Promise<Document[]>[] = blobDescriptors.map((d: CloudContentFile) =>
+      this.fileLoaders.generateDocuments(d),
+    );
+    const docs: Document[] = (await Promise.all(buildDocs)).flat();
+    const [docsAdded]: [number, number] = await this.langChainService.indexDocuments(docs);
+    /*
+    const docs: Document[] = await this.s3LoaderService.blobsToDocuments(bucket, blobNames);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [docsAdded]: [number, number] = await this.langChainService.indexDocuments(docs);
+    */
+    return docsAdded;
   }
 
   async deleteContentById(id: string) {
@@ -68,33 +124,34 @@ export class ContentService implements OnModuleInit {
     await this.langChainService.deleteDocumentsByInternalId(id);
   }
 
-  async processNotionPages(pageIds?: string): Promise<void> {
+  async processNotionPages(pageIds?: string): Promise<number> {
     const notionPageIds: string = pageIds ?? this.configService.get<string[]>('notion.pageIds').join(',');
     const listPageIds: string[] = notionPageIds.split(',');
-    const loadPagesTasks: Promise<Document[]>[] = listPageIds.map((pageId) =>
-      this.notionService.loadPagesFromId(pageId),
-    );
-    const loadedDocs: Document[] = (await Promise.all(loadPagesTasks)).flat();
+    const loadPagesTasks: Promise<Document[]>[] = listPageIds.map((pageId) => this.notionService.getAllFrom(pageId));
+    const docsToIndex: Document[] = (await Promise.all(loadPagesTasks)).flat();
     // await this.elasticSearchService.indexDocuments<Document>(this.contentIndex, pageDocs);
-    await this.langChainService.indexDocuments(loadedDocs);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [docsAdded] = await this.langChainService.indexDocuments(docsToIndex);
+    return docsAdded;
   }
 
   async processNoSQLData(dbName?: string, collections?: string): Promise<number> {
-    const mongo: MongoDBService = await this.mongodbService.connect();
     const db: string = dbName ?? this.configService.get('mongodb.dbName');
     const paramCollections: string = collections ?? this.configService.get('mongodb.collections');
     const collectionsList: string[] = paramCollections.split(',');
     let documentsIndexed = 0;
 
     for await (const collection of collectionsList) {
-      const data: any[] = await mongo.getAll({
+      const documents: Document[] = await this.mongodbService.getAllFrom({
         dbName: db,
         collection,
       });
-      this.logger.debug(`Documents retrieved ${data.length}`);
-      const docs: Document[] = this.langChainService.generateDocumentsFromResultSet(data);
-      const processedDocs: string[] = await this.langChainService.indexDocuments(docs);
-      documentsIndexed += processedDocs.length;
+      this.logger.debug(`Documents retrieved ${documents.length}`);
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [processedDocs] = await this.langChainService.indexDocuments(documents);
+      documentsIndexed += processedDocs;
     }
     await this.mongodbService.endConnection();
 

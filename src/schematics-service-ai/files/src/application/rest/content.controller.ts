@@ -14,13 +14,18 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { FilesUploadDto } from './dto/FilesUploadDto';
-import { PromptParamsDto } from './dto/PromptParamsDto';
-import { FileUploadParamsDto } from './dto/FileUploadParamsDto';
-import { NotionParamsDto } from './dto/NotionParamsDto';
-import { ContentService } from '../../domain/services/content/content.service';
-import { MongoDBParamsDto } from './dto/MongoDBParamsDto';
 
+import {
+  FilesUploadDto,
+  FileUploadParamsDto,
+  NotionParamsDto,
+  MongoDBParamsDto,
+  AzureBlobParamsDto,
+  S3BlobParamsDto,
+  PromptParamsDto,
+} from './dto';
+
+import { ContentService } from '../../domain/services/content/content.service';
 @Controller({
   path: 'content',
   version: '1',
@@ -45,7 +50,7 @@ export class ContentController {
     return { status: 'ok' };
   }
 
-  @Post('upload-files')
+  @Post('embed/upload/files')
   @UseInterceptors(FilesInterceptor('files'))
   @ApiOperation({
     summary: 'Uploads files to the service and indexes them in the search engine.', // eslint-disable-line
@@ -71,7 +76,23 @@ export class ContentController {
     await this.contentService.processFiles(files, fileUploadParamsDto.description);
   }
 
-  @Post('embed-notion')
+  @Post('embed/from/azure')
+  @ApiOperation({
+    summary: 'Import the content of a blob from an Azure Storage container',
+  })
+  async loadFromAzureBlob(@Body() azureBlobParams: AzureBlobParamsDto) {
+    await this.contentService.loadAzureBlobFile(azureBlobParams);
+  }
+
+  @Post('embed/from/s3')
+  @ApiOperation({
+    summary: 'Import the content of a blob from a S3 bucket',
+  })
+  async loadFromS3Blob(@Body() s3BlobParams: S3BlobParamsDto) {
+    await this.contentService.loadS3BlobFile(s3BlobParams);
+  }
+
+  @Post('embed/from/notion')
   @ApiOperation({
     summary: 'Import notion data (from page `pageId`) and children pages',
   })
@@ -80,7 +101,7 @@ export class ContentController {
     await this.contentService.processNotionPages(pageIds);
   }
 
-  @Post('embed-mongodb')
+  @Post('embed/from/mongodb')
   @ApiOperation({
     summary: 'Load remote data from mongodb collection. If not `collection` in params, will pick from configuration',
   })
@@ -88,7 +109,7 @@ export class ContentController {
     const { dbName, collections } = mongoParams;
     const result: number = await this.contentService.processNoSQLData(dbName, collections);
 
-    return { processed: result };
+    return { indexedDocuments: result };
   }
 
   @Delete('/:id')

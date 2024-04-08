@@ -139,3 +139,6 @@ dist
 !**/src/*/files/*.map
 !**/src/*/files/*.js
 !**/src/*/files/*.d.ts
+**/**/.DS_Store
+
+dist

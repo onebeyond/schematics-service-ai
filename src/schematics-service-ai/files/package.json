@@ -1,5 +1,5 @@
 {
-  "name": "<%= serviceName %>",
+  "name": "ob-service-ai",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -10,10 +10,11 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
+    "start:watch": "nest start --debug --watch",
+    "start:debug": "nest start --debug",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "test": "jest",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --detectOpenHandles",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
@@ -21,8 +22,10 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.540.0",
+    "@azure/storage-blob": "^12.17.0",
     "@elastic/elasticsearch": "^8.11.0",
-    "@langchain/openai": "^0.0.12",
+    "@langchain/openai": "^0.0.23",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.0.0",
@@ -35,15 +38,18 @@
     "d3-dsv": "^2.0.0",
     "html-to-text": "^9.0.5",
     "jsdom": "^24.0.0",
-    "langchain": "^0.1.12",
+    "langchain": "^0.1.29",
     "mongodb": "^5.9.2",
     "nestjs-pino": "^4.0.0",
     "notion-to-md": "^3.1.1",
     "pdf-parse": "^1.1.1",
+    "pg": "^8.11.3",
+    "pg-pool": "^3.6.1",
     "pino-http": "^9.0.0",
     "pino-pretty": "^10.3.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
+    "tmp": "^0.2.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -80,7 +86,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "roots": ["./src", "./test"],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

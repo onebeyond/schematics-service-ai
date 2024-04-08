@@ -69,18 +69,48 @@ export class ConfigValues {
       apiChatTemperature: number;
     };
   };
+  public readonly recordManager: {
+    database: {
+      type: 'postgres' | string;
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      database: string;
+    };
+    tableName: string;
+  };
+
+  public readonly indexingStrategy?: 'full' | 'incremental' | undefined;
+
   public readonly elasticsearch: {
     url: string;
     index: string;
   };
+  public readonly storage: {
+    azure?: {
+      connString: string;
+      container?: string;
+    };
+    s3?: {
+      credentials: {
+        accessKey: string;
+        secretKey: string;
+      };
+      region: string;
+      bucket: string;
+    };
+  };
   public readonly notion: {
     integrationToken: string;
     pageIds?: string;
+    transform?: (data: any) => Document;
   };
   public readonly mongodb: {
     connectionString: string;
     dbName?: string;
     collections?: string;
+    transform?: (data: any) => Document;
   };
   public readonly promptTemplate?: string;
 }
@@ -99,6 +129,32 @@ export const configValues = (): ConfigValues => ({
       apiEmbeddingsDeploymentName: process.env.AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME,
       apiChatDeploymentName: process.env.AZURE_OPENAI_API_CHAT_DEPLOYMENT_NAME,
       apiChatTemperature: Number(process.env.AZURE_OPENAI_API_CHAT_TEMPERATURE),
+    },
+  },
+  recordManager: {
+    database: {
+      type: 'postgres',
+      host: process.env.PG_HOST,
+      port: Number(process.env.PG_PORT),
+      user: process.env.PG_USER,
+      password: process.env.PG_PASSWORD,
+      database: process.env.PG_DB,
+    },
+    tableName: 'obai_upsertion_records',
+  },
+  indexingStrategy: 'incremental',
+  storage: {
+    azure: {
+      connString: process.env.AZURE_STORAGE_CONNSTRING,
+      container: process.env.AZURE_STORAGE_CONTAINER,
+    },
+    s3: {
+      credentials: {
+        accessKey: process.env.AWS_S3_ACCESSKEY,
+        secretKey: process.env.AWS_S3_SECRETKEY,
+      },
+      region: process.env.AWS_S3_REGION,
+      bucket: process.env.AWS_S3_BUCKET,
     },
   },
   elasticsearch: {

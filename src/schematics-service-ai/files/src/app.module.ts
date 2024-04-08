@@ -10,6 +10,9 @@ import { ElasticSearchService } from './infrastructure/elastic-search/elastic-se
 import { FileSystemService } from './infrastructure/file-system/file-system.service';
 import { LangChainService } from './infrastructure/lang-chain/lang-chain.service';
 import { NotionService } from './infrastructure/notion/notion.service';
+import { S3LoaderFileService, AzureLoaderFileService } from './infrastructure/cloud-storage';
+import { FileTypesLoadersService } from './infrastructure/file-system/file-loaders.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -52,6 +55,16 @@ import { NotionService } from './infrastructure/notion/notion.service';
     }),
   ],
   controllers: [ContentController],
-  providers: [ContentService, MongoDBService, FileSystemService, ElasticSearchService, LangChainService, NotionService],
+  providers: [
+    FileTypesLoadersService,
+    ContentService,
+    MongoDBService,
+    FileSystemService,
+    ElasticSearchService,
+    LangChainService,
+    NotionService,
+    AzureLoaderFileService,
+    S3LoaderFileService,
+  ],
 })
 export class AppModule {}

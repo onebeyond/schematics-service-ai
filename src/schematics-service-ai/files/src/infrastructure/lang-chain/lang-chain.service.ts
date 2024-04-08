@@ -1,28 +1,31 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ElasticVectorSearch, ElasticClientArgs } from '@langchain/community/vectorstores/elasticsearch';
+import { index } from 'langchain/indexes';
+import { PostgresRecordManager } from '@langchain/community/indexes/postgres';
+import { PoolConfig } from 'pg';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { Document } from '@langchain/core/documents';
 import { PromptTemplate } from '@langchain/core/prompts';
 
 import { ElasticSearchService } from '../elastic-search/elastic-search.service';
-import { ContentFile } from '../../domain/models/ContentFile';
 import { RetrievalQAChain } from 'langchain/chains';
-import { FileLoaders } from './lib/file-loaders';
 
 @Injectable()
 export class LangChainService {
   private readonly logger = new Logger(LangChainService.name);
   private vectorStore: ElasticVectorSearch;
+  private recordManager: PostgresRecordManager;
+  private readonly indexingStrategy: 'full' | 'incremental' | undefined;
   private readonly openAIChat: ChatOpenAI;
   private readonly indexName: string; // should be in config
   private readonly azureOpenAIApiKey: string;
   private readonly azureOpenAIApiVersion: string;
   private readonly azureOpenAIApiInstanceName: string;
   private readonly azureOpenAIApiEmbeddingsDeploymentName: string;
-  private fileLoaders = new FileLoaders();
 
-  private readonly splice = (l: any[], c: number) => (l.length < c ? [l] : [l.splice(0, c), ...this.splice(l, c)]);
+  private readonly splice = <T>(l: T[], c: number): T[][] =>
+    l.length < c ? [l] : [l.splice(0, c), ...this.splice<T>(l, c)];
 
   constructor(
     private readonly configService: ConfigService,
@@ -55,10 +58,21 @@ export class LangChainService {
       azureOpenAIApiInstanceName: this.azureOpenAIApiInstanceName,
       azureOpenAIApiDeploymentName: this.configService.get<string>('azure.openai.apiChatDeploymentName'),
     });
-  }
+    const recordManagerConfig = {
+      postgresConnectionOptions: {
+        type: 'postgres',
+        host: this.configService.get('recordManager.database.host'),
+        port: this.configService.get<number>('recordManager.database.port'),
+        user: this.configService.get('recordManager.database.user'),
+        password: this.configService.get('recordManager.database.password'),
+        database: this.configService.get('recordManager.database.database'),
+      } as PoolConfig,
+      tableName: this.configService.get('recordManager.tableName'),
+    };
+    this.recordManager = new PostgresRecordManager('obai-namespace', recordManagerConfig);
+    this.indexingStrategy = this.configService.get('indexingStrategy');
 
-  async generateDocumentsFromFile(contentFile: ContentFile): Promise<Document[]> {
-    return this.fileLoaders.generateDocuments(contentFile);
+    this.logger.debug('All langchain resources initialized');
   }
 
   generateDocumentsFromResultSet(data: any[]): Document[] {
@@ -66,22 +80,46 @@ export class LangChainService {
       (doc: any) =>
         new Document({
           pageContent: JSON.stringify(doc),
+          metadata: {
+            _id: doc._id,
+          },
         }),
     );
   }
 
-  async indexDocuments(docs: Document[]): Promise<string[]> {
+  async indexDocuments(docs: Document[]): Promise<[number, number]> {
     const spliceSize = docs.length / 10;
-    const docSlices = this.splice(docs, spliceSize);
-    let docIds: string[] = [];
+    const docSlices: Document[][] = this.splice<Document>(docs, spliceSize); // docs is mutated
+    let [documentsAdded, documentsUpdated]: [number, number] = [0, 0];
+
+    await this.recordManager.createSchema();
     for (let i = 0; i < docSlices.length; i++) {
       this.logger.debug(`Adding document slice ${i + 1} to vector store`);
-      const addedDocs: string[] = await this.vectorStore.addDocuments(docSlices[i]);
-      docIds = [...docIds, ...addedDocs];
+      try {
+        const indexResult = await index({
+          docsSource: docSlices[i],
+          recordManager: this.recordManager,
+          vectorStore: this.vectorStore,
+          options: {
+            cleanup: this.indexingStrategy,
+            sourceIdKey: 'sourceId',
+          },
+        });
+        [documentsAdded, documentsUpdated] = [
+          documentsAdded + indexResult.numAdded,
+          documentsUpdated + indexResult.numUpdated,
+        ];
+        this.logger.debug(
+          `Added: ${indexResult.numAdded}, Updated: ${indexResult.numUpdated}, Skipped: ${indexResult.numSkipped}`,
+        );
+      } catch (err) {
+        this.logger.error(`Error indexing (slice ${i + 1}): ${JSON.stringify(err)}`);
+        throw err;
+      }
     }
-    this.logger.log(`Indexed ${docIds.length} documents`);
+    this.logger.log(`Processed: add ${documentsAdded} documents, updated ${documentsUpdated} documents`);
 
-    return docIds;
+    return [documentsAdded, documentsUpdated];
   }
 
   async searchDocsBySimilarity(query: string): Promise<Document[]> {
@@ -104,10 +142,5 @@ export class LangChainService {
     return chain.invoke({
       query: prompt,
     });
-  }
-
-  async useAgnosticPrompt(prompt: string): Promise<string> {
-    const response = await this.openAIChat.invoke(prompt);
-    return response.content as string;
   }
 }
