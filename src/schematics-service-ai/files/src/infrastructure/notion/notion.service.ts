@@ -18,10 +18,12 @@ export class NotionService {
     } = data;
     return { ...data, metadata: { ...data.metadata, sourceId: `${notionId}-${lines.from}-${lines.to}` } };
   };
+  isAvailable: boolean;
 
   constructor(private readonly configService: ConfigService) {
     // eslint-disable-next-line prettier/prettier
     this.notionIntegrationToken = this.configService.get<string>('notion.integrationToken');
+    this.isAvailable = !!this.notionIntegrationToken;
   }
 
   async getAllFrom(pageId: string): Promise<Document<Record<string, any>>[]> {

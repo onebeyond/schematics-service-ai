@@ -74,13 +74,11 @@ export class ContentService implements OnModuleInit {
 
   //#region Azure
   async loadAzureBlobFile(blobParams: AzureBlobParamsDto): Promise<number | Error> {
+    if (!this.azureLoaderService.isAvailable) return Promise.resolve(new Error('400|Service endpoint not available'));
     const { container, prefix, blobName } = blobParams;
     const containerName: string = container ?? this.configService.get<string>('storage.azure.container');
     if (!containerName) return Error(`A container must be set either by query params or config`);
 
-    // const docs: Document[] = await this.azureLoaderService.getAll(containerName, prefix, blobName);
-    // needs ContentFile descriptors for file(s) in order to get file type and also the temp filePath!!
-    // then, with the descriptors, we can call langChainService.generateDocumentsFromFile(contentFile)
     const blobNames: string[] = await this.azureLoaderService.getBlobNames(containerName, prefix, blobName);
 
     const buildBlobDescriptors = blobNames.map(this.azureLoaderService.buildBlobDescriptor(containerName));
@@ -97,6 +95,7 @@ export class ContentService implements OnModuleInit {
 
   //#region S3
   async loadS3BlobFile(blobParams: S3BlobParamsDto): Promise<number | Error> {
+    if (!this.s3LoaderService.isAvailable) return Promise.resolve(new Error('400|Service endpoint not available'));
     const { bucket, prefix, blobName } = blobParams;
     const bucketName: string = bucket ?? this.configService.get<string>('storage.s3.bucket');
     if (!bucketName) return Error(`A bucket must be set either by body param 'bucket' or config`);
@@ -124,7 +123,9 @@ export class ContentService implements OnModuleInit {
     await this.langChainService.deleteDocumentsByInternalId(id);
   }
 
-  async processNotionPages(pageIds?: string): Promise<number> {
+  async processNotionPages(pageIds?: string): Promise<number | Error> {
+    if (!this.notionService.isAvailable) return Promise.resolve(new Error('400|Service endpoint not available'));
+
     const notionPageIds: string = pageIds ?? this.configService.get<string[]>('notion.pageIds').join(',');
     const listPageIds: string[] = notionPageIds.split(',');
     const loadPagesTasks: Promise<Document[]>[] = listPageIds.map((pageId) => this.notionService.getAllFrom(pageId));
@@ -136,7 +137,9 @@ export class ContentService implements OnModuleInit {
     return docsAdded;
   }
 
-  async processNoSQLData(dbName?: string, collections?: string): Promise<number> {
+  async processNoSQLData(dbName?: string, collections?: string): Promise<number | Error> {
+    if (!this.mongodbService.isAvailable) return Promise.resolve(new Error('400|Service endpoint not available'));
+
     const db: string = dbName ?? this.configService.get('mongodb.dbName');
     const paramCollections: string = collections ?? this.configService.get('mongodb.collections');
     const collectionsList: string[] = paramCollections.split(',');

@@ -4,15 +4,18 @@ import {
   Delete,
   FileTypeValidator,
   Get,
+  HttpStatus,
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
   Post,
+  Res,
   Query,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
 import {
@@ -33,6 +36,13 @@ import { ContentService } from '../../domain/services/content/content.service';
 @ApiTags('content')
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
+
+  static makeResponse(response: Response, res: any): Response {
+    const status: number = typeof res === 'object' ? Number(res.message.split('|')[0]) : HttpStatus.CREATED;
+    const data = typeof res == 'number' ? res : undefined;
+
+    return response.status(status).send(data);
+  }
 
   @Get()
   @ApiOperation({
@@ -80,36 +90,39 @@ export class ContentController {
   @ApiOperation({
     summary: 'Import the content of a blob from an Azure Storage container',
   })
-  async loadFromAzureBlob(@Body() azureBlobParams: AzureBlobParamsDto) {
-    await this.contentService.loadAzureBlobFile(azureBlobParams);
+  async loadFromAzureBlob(@Body() azureBlobParams: AzureBlobParamsDto, @Res() response: Response) {
+    const res: number | Error = await this.contentService.loadAzureBlobFile(azureBlobParams);
+    return ContentController.makeResponse(response, res);
   }
 
   @Post('embed/from/s3')
   @ApiOperation({
     summary: 'Import the content of a blob from a S3 bucket',
   })
-  async loadFromS3Blob(@Body() s3BlobParams: S3BlobParamsDto) {
-    await this.contentService.loadS3BlobFile(s3BlobParams);
+  async loadFromS3Blob(@Body() s3BlobParams: S3BlobParamsDto, @Res() response: Response) {
+    const res: number | Error = await this.contentService.loadS3BlobFile(s3BlobParams);
+    return ContentController.makeResponse(response, res);
   }
 
   @Post('embed/from/notion')
   @ApiOperation({
     summary: 'Import notion data (from page `pageId`) and children pages',
   })
-  async loadAndStoreNotionDocs(@Body() notionParams: NotionParamsDto) {
+  async loadAndStoreNotionDocs(@Body() notionParams: NotionParamsDto, @Res() response: Response) {
     const { pageIds } = notionParams;
-    await this.contentService.processNotionPages(pageIds);
+    const res: number | Error = await this.contentService.processNotionPages(pageIds);
+    return ContentController.makeResponse(response, res);
   }
 
   @Post('embed/from/mongodb')
   @ApiOperation({
     summary: 'Load remote data from mongodb collection. If not `collection` in params, will pick from configuration',
   })
-  async loadAndProcessMongoDBData(@Body() mongoParams: MongoDBParamsDto) {
+  async loadAndProcessMongoDBData(@Body() mongoParams: MongoDBParamsDto, @Res() response: Response) {
     const { dbName, collections } = mongoParams;
-    const result: number = await this.contentService.processNoSQLData(dbName, collections);
+    const result: number | Error = await this.contentService.processNoSQLData(dbName, collections);
 
-    return { indexedDocuments: result };
+    return ContentController.makeResponse(response, result);
   }
 
   @Delete('/:id')

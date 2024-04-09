@@ -1,10 +1,11 @@
 import { IsNumber, IsOptional, IsPort, IsString } from 'class-validator';
+import { Document } from 'langchain/document';
 import * as process from 'process';
 
 export class EnvVariables {
   @IsPort()
   @IsOptional()
-  PORT = '4000';
+  PORT = '5555';
 
   @IsString()
   @IsOptional()
@@ -47,7 +48,36 @@ export class EnvVariables {
   ELASTICSEARCH_URL: string;
 
   @IsString()
+  @IsOptional()
   NOTION_INTEGRATION_TOKEN: string;
+
+  @IsString()
+  @IsOptional()
+  MONGO_URL: string;
+
+  @IsString()
+  @IsOptional()
+  AZURE_STORAGE_CONNSTRING: string;
+
+  @IsString()
+  @IsOptional()
+  AZURE_STORAGE_CONTAINER: string;
+
+  @IsString()
+  @IsOptional()
+  AWS_S3_ACCESSKEY: string;
+
+  @IsString()
+  @IsOptional()
+  AWS_S3_SECRETKEY: string;
+
+  @IsString()
+  @IsOptional()
+  AWS_S3_REGION: string;
+
+  @IsString()
+  @IsOptional()
+  AWS_S3_BUCKET: string;
 }
 
 export class ConfigValues {
@@ -143,6 +173,15 @@ export const configValues = (): ConfigValues => ({
     tableName: 'obai_upsertion_records',
   },
   indexingStrategy: 'incremental',
+
+  elasticsearch: {
+    url: process.env.ELASTICSEARCH_URL,
+    index: 'elastic_index',
+  },
+  port: Number(process.env.PORT),
+  environment: process.env.NODE_ENV,
+  loggingLevel: process.env.LOGGING_LEVEL,
+
   storage: {
     azure: {
       connString: process.env.AZURE_STORAGE_CONNSTRING,
@@ -157,13 +196,6 @@ export const configValues = (): ConfigValues => ({
       bucket: process.env.AWS_S3_BUCKET,
     },
   },
-  elasticsearch: {
-    url: process.env.ELASTICSEARCH_URL,
-    index: 'elastic_index',
-  },
-  port: Number(process.env.PORT),
-  environment: process.env.NODE_ENV,
-  loggingLevel: process.env.LOGGING_LEVEL,
   notion: {
     integrationToken: process.env.NOTION_INTEGRATION_TOKEN,
   },

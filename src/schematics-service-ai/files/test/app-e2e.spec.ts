@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { ConfigService } from '@nestjs/config';
 import { ContentService } from '../src/domain/services/content/content.service';
 import { ContentController } from '../src/application/rest/content.controller';
 
@@ -13,10 +14,21 @@ describe('AppController (e2e)', () => {
   };
 
   beforeEach(async () => {
+    const configServiceMock = {
+      get: jest.fn((key: string) => {
+        if (key === 'notion.transform') return undefined;
+        if (key === 'notion.integrationToken') return 'notion.integrationToken';
+      }),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
       controllers: [ContentController],
       providers: [
+        {
+          provide: ConfigService,
+          useValue: configServiceMock,
+        },
         {
           provide: ContentService,
           useValue: contentServiceMock,

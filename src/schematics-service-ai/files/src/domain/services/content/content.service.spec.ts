@@ -40,10 +40,14 @@ describe('ContentService', () => {
       switch (key) {
         case 'elasticsearch.index':
           return 'index';
+        case 'mongodb.connectionString':
+          return 'mongoConnectionString';
         case 'mongodb.dbName':
           return 'dbName';
         case 'mongodb.collections':
           return 'collection';
+        case 'notion.integrationToken':
+          return 'notionToken';
         case 'notion.pageIds':
           return ['notionPageIdFromConfig', 'notionPageIdFromConfig2'];
         default:
@@ -52,6 +56,7 @@ describe('ContentService', () => {
     }),
   };
   const notionServiceMock = {
+    isAvailable: true,
     getAllFrom: jest.fn().mockImplementation((pageId?: string) =>
       Promise.resolve({
         pageContent: `Content for ${pageId}`,
@@ -61,6 +66,7 @@ describe('ContentService', () => {
   };
   const mongodbServiceMock = {
     connect: () => mongodbServiceMock,
+    isAvailable: true,
     getAllFrom: jest.fn().mockImplementation(({ dbName, collection }) =>
       Promise.resolve([
         {
@@ -130,7 +136,7 @@ describe('ContentService', () => {
   describe('Optional parameters on embedding methods', () => {
     describe('on mongodb', () => {
       it('should call mongo service with right parameters picked from config', async () => {
-        let result: number;
+        let result: number | Error;
         let error: unknown;
         const [dbName, collection] = [undefined, undefined];
 
@@ -149,7 +155,7 @@ describe('ContentService', () => {
 
       it('should call mongo service with parameters from controller', async () => {
         const [dbName, collections] = ['dbName', 'coll'];
-        let result: number;
+        let result: number | Error;
         let error: unknown;
 
         try {
@@ -166,7 +172,7 @@ describe('ContentService', () => {
 
       it('should call mongo service if only one parameter is collection', async () => {
         const [dbName, collection] = [undefined, 'coll'];
-        let result: number;
+        let result: number | Error;
         let error: unknown;
 
         try {
@@ -182,7 +188,7 @@ describe('ContentService', () => {
 
       it('should call mongo service with multiple collections to index', async () => {
         const [dbName, collections] = ['dbName', 'coll1,coll2,coll3'];
-        let result: number;
+        let result: number | Error;
         let error: unknown;
 
         try {

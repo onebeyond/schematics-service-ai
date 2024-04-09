@@ -15,10 +15,14 @@ import { CloudContentFile } from 'src/domain/models/ContentFile';
 export class AzureLoaderFileService {
   private readonly logger = new Logger(AzureLoaderFileService.name);
   private blobServiceClient: BlobServiceClient;
+  isAvailable: boolean;
 
   constructor(private readonly configService: ConfigService) {
     const azureStorageConnString = this.configService.get<string>('storage.azure.connString');
-    this.blobServiceClient = BlobServiceClient.fromConnectionString(azureStorageConnString);
+    this.blobServiceClient = azureStorageConnString
+      ? BlobServiceClient.fromConnectionString(azureStorageConnString)
+      : undefined;
+    this.isAvailable = !!this.blobServiceClient;
   }
 
   private blobToDocuments =

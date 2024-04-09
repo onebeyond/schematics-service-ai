@@ -17,18 +17,22 @@ export class S3LoaderFileService {
   private s3AccessKey: string;
   private s3SecretKey: string;
   private s3Client: S3Client;
+  isAvailable: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.s3Region = this.configService.get<string>('storage.s3.region');
     this.s3AccessKey = this.configService.get<string>('storage.s3.credentials.accessKey');
     this.s3SecretKey = this.configService.get<string>('storage.s3.credentials.secretKey');
-    this.s3Client = new S3Client({
-      region: this.s3Region,
-      credentials: {
-        accessKeyId: this.s3AccessKey,
-        secretAccessKey: this.s3SecretKey,
-      },
-    });
+    this.s3Client = (!!this.s3Region && !!this.s3AccessKey && !!this.s3SecretKey)
+      ? new S3Client({
+          region: this.s3Region,
+          credentials: {
+            accessKeyId: this.s3AccessKey,
+            secretAccessKey: this.s3SecretKey,
+          },
+        })
+      : undefined;
+    this.isAvailable = !!this.s3Client;
   }
 
   private getDocumentsFromBlob =

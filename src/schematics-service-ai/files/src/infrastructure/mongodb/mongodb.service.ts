@@ -17,11 +17,13 @@ export class MongoDBService {
     } = data;
     return { ...data, metadata: { ...data.metadata, sourceId: String(_id) } };
   };
+  isAvailable: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.url = configService.get<string>('mongodb.connectionString');
 
-    this.client = new MongoClient(this.url);
+    this.client = !!this.url ? new MongoClient(this.url) : undefined;
+    this.isAvailable = !!this.client;
   }
 
   async connect(): Promise<MongoClient> {
